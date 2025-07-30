@@ -1,49 +1,50 @@
-
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_lab16_1/cubits/auth_cubit.dart';
-import 'package:flutter_lab16_1/cubits/form_validation/form_validation_cubit.dart';
-import 'package:flutter_lab16_1/screens/home_screen.dart';
+import 'package:flutter_lab16_1/repositores/news_repository.dart';
+import 'package:flutter_lab16_1/sources/local/news_local_data_source.dart';
+import 'package:flutter_lab16_1/sources/remote/news_remote_data_source.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/login_screen.dart';
+import 'features/news/cubit/news_cubit.dart';
+import 'features/news/views/home_screen.dart';
+import 'services/news_service.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
   
-  runApp(
-    MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (_) => FormValidationCubit()),
-        BlocProvider(create: (_) => AuthCubit()),
-      ],
-      child: MyApp(prefs: prefs),
+  final sharedPrefs = await SharedPreferences.getInstance();
+  final newsService = NewsService();
+  
+  runApp(MyApp(
+    
+    newsRepository: NewsRepository(
+      remoteDataSource: NewsRemoteDataSource(newsService),
+      localDataSource: NewsLocalDataSource(sharedPrefs),
     ),
-  );
+    sharedPreferences: sharedPrefs,
+  ));
 }
 
 class MyApp extends StatelessWidget {
-  final SharedPreferences prefs;
-  
-  const MyApp({Key? key, required this.prefs}) : super(key: key);
+  final NewsRepository newsRepository;
+  final SharedPreferences sharedPreferences;
+
+  const MyApp({
+    super.key,
+    required this.newsRepository,
+    required this.sharedPreferences,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'News App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: BlocBuilder<AuthCubit, AuthState>(
-        builder: (context, state) {
-          if (state is AuthSuccess) {
-            return const HomeScreen();
-          }
-          return const LoginScreen();
-        },
+      home: BlocProvider(
+        create: (context) => NewsCubit(
+          newsRepository: newsRepository,
+          sharedPreferences: sharedPreferences,
+        ),
+        child: const HomeScreen(),
       ),
     );
   }

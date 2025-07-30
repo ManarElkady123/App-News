@@ -16,6 +16,8 @@ dependencies:
   equatable: ^2.0.5
   crypto: ^3.0.3
   email_validator: ^2.1.17
+  intl: ^0.18.1
+  url_launcher: ^6.1.11
 
 
 dev_dependencies:
